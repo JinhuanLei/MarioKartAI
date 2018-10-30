@@ -1,11 +1,11 @@
 import numpy as np
 import os
-import sys
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.model_selection import train_test_split
 from CNN.smallervggnet import SmallerVGGNet
-from keras.optimizers import Adam
+from helper import helper
+import time
 
 imageSet = []
 controllerSet = []
@@ -16,22 +16,7 @@ rightBoostSet = []
 boostSet = []
 noneActionSet = []
 IMAGE_DIMS = [15, 15, 1]
-
-
-def showImage(imageData):
-	fig = plt.figure()
-	plotwindow = fig.add_subplot(111)
-	plt.axis('off')
-	plt.imshow(imageData, interpolation='nearest', cmap='gray')
-	plt.show()
-
-
-############
-# ax1 = fig.add_subplot(1,2,1)
-# ax1.imshow(imageData, cmap=plt.cm.gray)
-# ax2 = fig.add_subplot(1,2,2)
-# ax2.imshow(imageData, cmap=plt.cm.gray_r)
-# plt.show()
+module_path = os.path.dirname(__file__)
 
 
 def ParseTxt():  # numpy way
@@ -39,17 +24,12 @@ def ParseTxt():  # numpy way
 	dataFileName = module_path + "/testOct0914.txt"
 	a = np.loadtxt(dataFileName)
 	print("Loading Data from database.")
-	print(a.shape, "  ", len(a))
 	a = a.reshape((len(a), IMAGE_DIMS[0], IMAGE_DIMS[1]))
-	print(a[0])
-	# print(type(a))
-	# print(a[1])
-	showImage(a[300])
+	helper.showImage(a[300])
 
 
 def ParseFullData(FileName):  # tradition way
 	global imageSet, controllerSet
-	module_path = os.path.dirname(__file__)
 	dataFileName = module_path + FileName
 	with open(dataFileName, "r") as f:
 		x = 0
@@ -73,21 +53,18 @@ def KerasPreprocessing():
 	data = data.reshape(len(data), 15, 15)
 	labels = classifyController()
 	labels = np.array(labels)
-	print(data.shape, "    ", labels.shape)
+	print("Data.shape ",data.shape, "________ Label shape: ", labels.shape)
 	lb = LabelBinarizer()
 	labels = lb.fit_transform(labels)
-	print(len(labels), labels[0])
-	(train_images, test_images, train_labels, test_labels) = train_test_split(data, labels, test_size=0.2,
-																			  random_state=42)
-	print(len(train_images), len(test_images), len(train_labels), len(test_labels))
+	(train_images, test_images, train_labels, test_labels) = train_test_split(data, labels, test_size=0.2, random_state=42)
+	print("train_images: ",len(train_images), "test_images :",len(test_images),"train_labels :", len(train_labels), "test_labels :",len(test_labels))
 	train_images = np.expand_dims(train_images, axis=3)
-	print(train_images.shape)
 	test_images = np.expand_dims(test_images, axis=3)
 	model = SmallerVGGNet.build(width=IMAGE_DIMS[1], height=IMAGE_DIMS[0], depth=IMAGE_DIMS[2])
 	model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['accuracy'])
-	history = model.fit(train_images, train_labels, validation_split=0.2, epochs=50, batch_size=64)
+	history = model.fit(train_images, train_labels, validation_split=0.2, epochs=20, batch_size=20)
 	test_loss, test_acc = model.evaluate(test_images, test_labels)
-	print("test_acc", test_acc)
+	print("test_acc :", test_acc)
 	showModel(history)
 
 
@@ -98,6 +75,7 @@ def showModel(history):
 	plt.ylabel('Accuracy')
 	plt.xlabel('Epoch')
 	plt.legend(['Train', 'Test'], loc='upper left')
+	plt.savefig(module_path + "/MatplotImages/ModelAccuracy" + helper.getNameByTime() + ".png")
 	plt.show()
 	# Plot training & validation loss values
 	plt.plot(history.history['loss'])
@@ -106,7 +84,9 @@ def showModel(history):
 	plt.ylabel('Loss')
 	plt.xlabel('Epoch')
 	plt.legend(['Train', 'Test'], loc='upper left')
+	plt.savefig(module_path + "/MatplotImages/ModelLoss" + helper.getNameByTime() + ".png")
 	plt.show()
+
 
 
 def classifyController():
@@ -137,10 +117,10 @@ def optimiseData():
 		if (not isNullAction(controllerSet[fast])):
 			imageSet[slow] = imageSet[fast]
 			controllerSet[slow] = controllerSet[fast]
-			slow += 1;
-			fast += 1;
+			slow += 1
+			fast += 1
 		else:
-			fast += 1;
+			fast += 1
 	imageSet = imageSet[0: slow]
 	controllerSet = controllerSet[0: slow]
 	for (x, y) in zip(imageSet, controllerSet):
@@ -202,4 +182,4 @@ def dataSetPreprocessing():  # Deprecated
 
 if __name__ == "__main__":
 	# ParseTxt()
-	ParseFullData("/FullData.txt")
+	ParseFullData("/FullData2.txt")
