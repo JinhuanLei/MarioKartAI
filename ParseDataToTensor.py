@@ -62,7 +62,7 @@ def KerasPreprocessing():
 	test_images = np.expand_dims(test_images, axis=3)
 	model = SmallerVGGNet.build(width=IMAGE_DIMS[1], height=IMAGE_DIMS[0], depth=IMAGE_DIMS[2])
 	model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['accuracy'])
-	history = model.fit(train_images, train_labels, validation_split=0.2, epochs=20, batch_size=20)
+	history = model.fit(train_images, train_labels, validation_split=0.2, epochs=50, batch_size=20)
 	test_loss, test_acc = model.evaluate(test_images, test_labels)
 	print("test_acc :", test_acc)
 	showModel(history)
